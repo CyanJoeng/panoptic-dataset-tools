@@ -27,6 +27,7 @@ class CalibReader:
     def k_depth_color(self):
         T = self._k_calib['M_color']
         T = np.array(T)
+        T[:3, :3] = np.array([[1, 0, 0], [0, -1, 0], [0, 0, 1]]) * T[:3, :3]
         return T[:3, :3], T[:3, 3:]
 
     def depth_proj(self):

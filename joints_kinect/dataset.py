@@ -57,29 +57,57 @@ class Dataset:
 
             yield (bodies, depth, color)
 
-    def joints_proj(self, joints):
-        K, d = self._calib.color_proj()
+    def joints_to_color(self, joints):
         R, t = self._calib.joints_k_color()
 
         joints = joints[:, :3]
 
-        r, _ = cv.Rodrigues(R)
-        pts, _ = cv.projectPoints(joints, r, t, K, d)
-        return pts
+        joints = joints @ np.linalg.inv(R) + t.reshape(1, 3)
+        return joints
 
-    def depth_proj(self, depth):
+    def depth_to_color_cloud(self, depth, shape, roi):
         d_K, d_d = self._calib.depth_proj()
-        c_K, c_d = self._calib.color_proj()
         R, t = self._calib.k_depth_color()
 
         dfx, dfy, dcx, dcy = d_K[0, 0], d_K[1, 1], d_K[0, 2], d_K[1, 2]
 
         d_d = d_d[:5]
 
-        depth = cv.undistort(depth, d_K, d_d)
-        cloud = np.array([[(u - dcx) / dfx * depth[v, u], (v - dcy) / dfy * depth[v, u], depth[v, u]] for v in range(depth.shape[0]) for u in range(depth.shape[1])])
+        depth = cv.undistort(depth, d_K, d_d) / 1e3
 
-        cloud = np.expand_dims(cloud, axis=0)
-        proj_pts, _ = cv.projectPoints(cloud, R, t, c_K, c_d)
+        cloud = np.array([[(u - dcx) / dfx * depth[v, u], (v - dcy) / dfy * depth[v, u], depth[v, u]] for v in range(depth.shape[0]) for u in range(depth.shape[1]) if depth[v, u] < 3 and depth[v, u] > 1.5])
+        cloud = cloud @ np.linalg.inv(R) + t.reshape(1, 3)
+
+        img_pts = self.project_pts(cloud)
+        img_pts = np.array(img_pts + 0.5).astype(np.int32)
+
+        img_pts_filter, cloud_filter = self._filter_pts(img_pts, cloud, shape[:2])
+        print(f'pts len {img_pts.shape} -> {img_pts_filter.shape}')
+
+        proj_cloud = np.zeros(shape=shape)
+        proj_cloud[img_pts_filter[:, 1], img_pts_filter[:, 0], :] = cloud_filter
+
+        return proj_cloud[roi[1]: roi[3], roi[0]: roi[2]], proj_cloud
+
+    def _filter_pts(self, img, cloud, shape):
+        img_pts, cloud_pts = img, cloud
+        h, w = shape
+
+        for _idx in [
+                lambda pts: 0 < pts[:, 0],
+                lambda pts: pts[:, 0] < w,
+                lambda pts: 0 < pts[:, 1],
+                lambda pts: pts[:, 1] < h
+                ]:
+            idx = np.array(_idx(img_pts))
+            img_pts = img_pts[idx]
+            cloud_pts = cloud_pts[idx]
+
+        return img_pts, cloud_pts
+
+    def project_pts(self, cloud):
+        K, d = self._calib.color_proj()
+        proj_pts, _ = cv.projectPoints(cloud, np.zeros(3), np.zeros(3), K, d)
+        proj_pts = proj_pts.reshape(-1, 2)
         return proj_pts
 
