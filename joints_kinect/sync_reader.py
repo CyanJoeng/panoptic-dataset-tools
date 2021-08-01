@@ -83,13 +83,13 @@ class SyncReader:
     def _sync(self):
         for bodies, (color, depth) in zip(self._timed_bodies.values(), self._nearest(self._time_iter(self._color_time), self._time_iter(self._depth_time))):
 
-            print(f'iter {color} {depth}')
+            # print(f'iter {color} {depth}')
 
             if depth[0] == -1 or color[0] == -1:
                 break
             if abs(depth[1] - color[1]) > 6.5:
                 continue
 
-            print(f'yield {color} {depth}')
+            # print(f'yield {color} {depth}')
             yield (bodies, depth[0], color[0])
 

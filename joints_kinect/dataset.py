@@ -17,7 +17,7 @@ class Dataset:
     def __init__(self, database_dir, node):
         root = database_dir
 
-        self._color = ColorReader(path.join(root, 'kinectVideos', f'kinect_50_{node:02d}.mp4'))
+        self._color = ColorReader(path.join(root, 'kinectImgs', f'50_{node:02d}'))
         self._depth = DepthReader(path.join(root, 'kinect_shared_depth', f'KINECTNODE{node}', 'depthdata.dat'))
 
         dataset_label = path.basename(database_dir)
@@ -34,7 +34,6 @@ class Dataset:
         if idx > len(self._data):
             raise Exception("out of range")
         joints, depth_id, color_id = self._data[idx]
-        print(depth_id >= len(self._depth), color_id >= len(self._color))
         depth = self._depth[depth_id]
         color = self._color[color_id]
 
@@ -65,7 +64,7 @@ class Dataset:
         joints = joints @ np.linalg.inv(R) + t.reshape(1, 3)
         return joints
 
-    def depth_to_color_cloud(self, depth, shape, roi):
+    def depth_to_color_cloud(self, depth, shape):
         d_K, d_d = self._calib.depth_proj()
         R, t = self._calib.k_depth_color()
 
@@ -87,7 +86,7 @@ class Dataset:
         proj_cloud = np.zeros(shape=shape)
         proj_cloud[img_pts_filter[:, 1], img_pts_filter[:, 0], :] = cloud_filter
 
-        return proj_cloud[roi[1]: roi[3], roi[0]: roi[2]], proj_cloud
+        return proj_cloud
 
     def _filter_pts(self, img, cloud, shape):
         img_pts, cloud_pts = img, cloud

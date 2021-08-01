@@ -17,7 +17,6 @@ class DepthReader:
         return self._count
 
     def __getitem__(self, idx):
-        print(f'get depth id : {idx}/{self._count}')
         if idx > self._count:
             raise Exception('depth index out of range')
 

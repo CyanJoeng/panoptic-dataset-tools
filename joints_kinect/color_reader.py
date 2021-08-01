@@ -2,25 +2,25 @@
 Author: Cyan
 Date: Mon Jul 26 23:33:45 CST 2021
 '''
+import os
 from cv2 import cv2 as cv
 
 class ColorReader:
-    def __init__(self, color_file) -> None:
-        self._frames = cv.VideoCapture(color_file) 
+    def __init__(self, color_dir):
+        frame_files = os.listdir(color_dir)
+        frame_files.sort()
         self._count = 0
-        if self._frames.isOpened():
-            self._count = int(self._frames.get(cv.CAP_PROP_FRAME_COUNT))
-        
+        if len(frame_files) != 0:
+            self._count = len(frame_files)
+            print(f'color frame count {self._count}')
+            self._frames_path = [os.path.join(color_dir, name) for name in frame_files]
+
     def __len__(self):
         return self._count
 
     def __getitem__(self, idx):
-        print(f'get color id: {idx}/{self._count}')
         if idx > self._count:
             raise Exception('color index out of range')
-        self._frames.set(cv.CAP_PROP_POS_FRAMES, idx)
-        ret, frame = self._frames.read()
-        if not ret:
-            raise Exception(f'error frame by idx:{idx}')
+        frame = cv.imread(self._frames_path[idx])
         return frame
 
