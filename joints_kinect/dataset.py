@@ -2,7 +2,6 @@
 Author: Cyan
 Date: Mon Jul 26 23:26:05 CST 2021
 '''
-from joints_kinect.calib_reader import CalibReader
 from os import path
 
 import numpy as np
@@ -11,6 +10,7 @@ from cv2 import cv2 as cv
 from .color_reader import ColorReader
 from .depth_reader import DepthReader
 from .sync_reader import SyncReader
+from .calib_reader import CalibReader
 
 
 class Dataset:
@@ -81,7 +81,7 @@ class Dataset:
         img_pts = np.array(img_pts + 0.5).astype(np.int32)
 
         img_pts_filter, cloud_filter = self._filter_pts(img_pts, cloud, shape[:2])
-        print(f'pts len {img_pts.shape} -> {img_pts_filter.shape}')
+        # print(f'pts len {img_pts.shape} -> {img_pts_filter.shape}')
 
         proj_cloud = np.zeros(shape=shape)
         proj_cloud[img_pts_filter[:, 1], img_pts_filter[:, 0], :] = cloud_filter

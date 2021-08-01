@@ -9,16 +9,19 @@ class DepthReader:
     frame_len = 2 * 424 * 512
 
     def __init__(self, depth_file) -> None:
-        self._frames = open(depth_file, 'rb')
-        self._frames.seek(0, 2)
-        self._count = self._frames.tell() // DepthReader.frame_len
+        self._depth_file = depth_file
+        frames = open(depth_file, 'rb')
+        frames.seek(0, 2)
+        self._count = frames.tell() // DepthReader.frame_len
+
+        self._frames = None
 
     def __len__(self):
         return self._count
 
     def __getitem__(self, idx):
-        if idx > self._count:
-            raise Exception('depth index out of range')
+        if self._frames is None:
+            self._frames = open(self._depth_file, 'rb')
 
         self._frames.seek(idx * DepthReader.frame_len, 0)
         raw_data = self._frames.read(DepthReader.frame_len)
